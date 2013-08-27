@@ -10,8 +10,8 @@ sentence_end = readme_contents.find('.', parastart)
 
 setup(
     name='cluster',
-    version='1.1.2',
-    author='Michel Albert',
+    version='1.1.2.v1',
+    author='Michel Albert and Alexander Vostrikov',
     author_email='exhuma@users.sourceforge.net',
     url='http://python-cluster.sourceforge.net/',
     py_modules=['cluster'],
