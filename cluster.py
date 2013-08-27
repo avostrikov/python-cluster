@@ -694,7 +694,8 @@ class KMeansClustering:
                        standard python equality operator (``==``) is applied.
         """
         self.__clusters = []
-        self.__data = self.tupleData(data)
+        self.__centroids = []
+        self.__data = self.listsToTuples(data)
         self.distance = distance
         self.__initial_length = len(self.__data)
         self.equality = equality
@@ -717,7 +718,7 @@ class KMeansClustering:
         elif distance is None:
             self.distance = minkowski_distance
 
-    def tupleData(self, data):
+    def listsToTuples(self, data):
         # if input data is a list of lists = [x, y, z, ...]
         if type(data[0]) == list:
             # test if each element has the same length
@@ -735,6 +736,9 @@ class KMeansClustering:
                 tupledata[-1] = tuple(tupledata[-1])
             return tupledata
         return data
+    
+    def tuplesToLists(self, data):
+        return [[data[j][i] for j in range(len(data))] for i in range(len(data[0]))]
     
     def getclusters(self, count):
         """
@@ -776,20 +780,30 @@ class KMeansClustering:
                         items_moved = res
         return self.__clusters
 
-    def getcentroids(self, count=None):
+    def getcentroids(self, count=None, output="tuple"):
+        if output not in ["tuple", "list"]:
+            raise ValueError("Unknown output format is requested from KMeansClustering:getcentroids()")
         if (count == len(self.__clusters)) or (count is None):
-            centroids = []
+            if len(self.__centroids) == len(self.__clusters):
+                if output == "tuple":
+                    return self.__centroids
+                elif output == "list":
+                    return self.tuplesToLists(self.__centroids)
+            self.__centroids = []
             for cluster in self.__clusters:
-                centroids.append([0.0 for i in range(len(cluster[0]))])
+                self.__centroids.append([0.0 for i in range(len(cluster[0]))])
                 for item in cluster:
                     for i in range(len(item)):
-                        centroids[-1][i] += item[i]
-                for i in range(len(centroids[-1])):
-                    centroids[-1][i] /= len(cluster)
-                centroids[-1] = tuple(centroids[-1])
-            return centroids
+                        self.__centroids[-1][i] += item[i]
+                for i in range(len(self.__centroids[-1])):
+                    self.__centroids[-1][i] /= len(cluster)
+                self.__centroids[-1] = tuple(self.__centroids[-1])
+            if output == "tuple":
+                return self.__centroids
+            elif output == "list":
+                return self.tuplesToLists(self.__centroids)
         self.getclusters(count)
-        return self.getcentroids()
+        return self.getcentroids(output=output)
     
     def assign_item(self, item, origin):
         """
