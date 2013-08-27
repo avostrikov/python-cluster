@@ -694,21 +694,21 @@ class KMeansClustering:
                        standard python equality operator (``==``) is applied.
         """
         self.__clusters = []
-        self.__data = data
+        self.__data = self.tupleData(data)
         self.distance = distance
-        self.__initial_length = len(data)
+        self.__initial_length = len(self.__data)
         self.equality = equality
 
         # test if each item is of same dimensions
-        if len(data) > 1 and isinstance(data[0], TupleType):
-            control_length = len(data[0])
-            for item in data[1:]:
+        if len(self.__data) > 1 and isinstance(self.__data[0], TupleType):
+            control_length = len(self.__data[0])
+            for item in self.__data[1:]:
                 if len(item) != control_length:
                     raise ValueError("Each item in the data list must have "
                             "the same amount of dimensions. Item %r was out "
                             "of line!" % (item,))
         # now check if we need and have a distance function
-        if (len(data) > 1 and not isinstance(data[0], TupleType) and
+        if (len(self.__data) > 1 and not isinstance(self.__data[0], TupleType) and
                 distance is None):
             raise ValueError("You supplied non-standard items but no "
                     "distance function! We cannot continue!")
@@ -717,6 +717,25 @@ class KMeansClustering:
         elif distance is None:
             self.distance = minkowski_distance
 
+    def tupleData(self, data):
+        # if input data is a list of lists = [x, y, z, ...]
+        if type(data[0]) == list:
+            # test if each element has the same length
+            control_length = len(data[0])
+            for item in data[1:]:
+                if len(item) != control_length:
+                    raise ValueError("Each item in the data list must have "
+                            "the same amount of dimensions. Item %r was out "
+                            "of line!" % (item,))
+            tupledata = []
+            for i in range(control_length):
+                tupledata.append([])
+                for j in range(len(data)):
+                    tupledata[-1].append(data[j][i])
+                tupledata[-1] = tuple(tupledata[-1])
+            return tupledata
+        return data
+    
     def getclusters(self, count):
         """
         Generates <count> clusters
@@ -730,12 +749,12 @@ class KMeansClustering:
         if count <= 1:
             raise ClusteringError("When clustering, you need to ask for at "
                     "least two clusters! You asked for %d" % count)
-
+        
         # return the data straight away if there is nothing to cluster
         if (self.__data == [] or len(self.__data) == 1 or
                 count == self.__initial_length):
             return self.__data
-
+        
         # It makes no sense to ask for more clusters than data-items available
         if count > self.__initial_length:
             raise ClusteringError("Unable to generate more clusters than "
@@ -757,6 +776,21 @@ class KMeansClustering:
                         items_moved = res
         return self.__clusters
 
+    def getcentroids(self, count=None):
+        if (count == len(self.__clusters)) or (count is None):
+            centroids = []
+            for cluster in self.__clusters:
+                centroids.append([0.0 for i in range(len(cluster[0]))])
+                for item in cluster:
+                    for i in range(len(item)):
+                        centroids[-1][i] += item[i]
+                for i in range(len(centroids[-1])):
+                    centroids[-1][i] /= len(cluster)
+                centroids[-1] = tuple(centroids[-1])
+            return centroids
+        self.getclusters(count)
+        return self.getcentroids()
+    
     def assign_item(self, item, origin):
         """
         Assigns an item from a given cluster to the closest located cluster
